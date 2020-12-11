@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+    name: mimicchio
+    labels:
+        app: mimicchio
+spec:
+    containers:
+        - name: k8s-mimicchio
+          image: mts88/sample1:1.0.2
+          ports:
+            - name: nodejs-port
+              containerPort: 3000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+                path: /
+                port: nodejs-port
+            initialDelaySeconds: 15
+            timeoutSeconds: 30
+    nodeSelector:
+        type: backend

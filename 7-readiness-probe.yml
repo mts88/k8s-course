@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: mimicchio-deployment
+spec:
+    replicas: 2
+    revisionHistoryLimit: 5
+    selector:
+        matchLabels:
+            app.kubernetes.io/name: mimicchio
+    template:
+        metadata:
+            labels:
+                app.kubernetes.io/name: mimicchio
+                app: mimicchio
+        spec:
+            containers:
+                - name: k8s-mimicchio
+                  image: mts88/sample1:1.0.2
+                  ports:
+                    - name: nodejs-port
+                      containerPort: 3000
