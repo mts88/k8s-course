@@ -3,7 +3,7 @@ const app = express()
 const port = 3000
 
 app.get('/', (req, res) => {
-  res.send('Hello World upgraded version!')
+  res.send('Hello World upgraded version! PS: ' + process.env.SECRET_PASSWORD)
 })
 
 app.listen(port, () => {
