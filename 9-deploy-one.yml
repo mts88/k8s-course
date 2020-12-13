@@ -1,0 +1,102 @@
+#
+# Secrets definitions
+#
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mimicchio-secret
+type: Opaque
+data:
+  password: bXkgdmVyeSBzZWNyZXQgcGFzc3dvcmQhISBTc3NzaCEhIQ==
+---
+#
+# Deployments Definitions Sample1
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mimicchio-deployment
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: mimicchio
+  template:
+    metadata:
+      labels:
+        app: mimicchio
+    spec:
+      containers:
+      - name: k8s-mimicchio
+        image: mts88/sample1:1.0.4
+        ports:
+          - name: nodejs-port
+            containerPort: 3000
+        env:
+          - name: SECRET_PASSWORD
+            valueFrom:
+                secretKeyRef:
+                  name: mimicchio-secret
+                  key: password
+
+---
+#
+# Service definition (exposing)
+#
+apiVersion: v1
+kind: Service
+metadata: 
+    name: mimicchio-service
+spec:
+    ports:
+        - port: 31001
+          nodePort: 31001
+          targetPort: nodejs-port
+          protocol: TCP
+    selector:
+        app: mimicchio
+    type: NodePort
+---
+#
+# Deployments Definitions Sample2
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mimicchio2-deployment
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: mimicchio2
+  template:
+    metadata:
+      labels:
+        app: mimicchio2
+    spec:
+      containers:
+      - name: k8s-mimicchio
+        image: mts88/sample2:1.0.0
+        ports:
+          - name: nodejs2-port
+            containerPort: 3001
+
+---
+#
+# Service definition Sample2 (exposing)
+#
+apiVersion: v1
+kind: Service
+metadata: 
+    name: mimicchio2-service
+spec:
+    ports:
+        - port: 31002
+          nodePort: 31002
+          targetPort: nodejs2-port
+          protocol: TCP
+    selector:
+        app: mimicchio2
+    type: NodePort

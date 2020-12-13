@@ -1,0 +1,156 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mimicchio-rules
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /m1
+            pathType: Prefix
+            backend:
+              service:
+                name: mimicchio1-service
+                port:
+                  name: ms1-port
+    - http:
+        paths:
+          - path: /m2
+            pathType: Prefix
+            backend:
+              service:
+                name: mimicchio2-service
+                port:
+                  name: ms2-port
+---
+#
+# Secrets definitions
+#
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mimicchio1-secret
+type: Opaque
+data:
+  password: bXkgdmVyeSBzZWNyZXQgcGFzc3dvcmQhISBTc3NzaCEhIQ==
+---
+#
+# ConfigMap Mimicchio 2
+#
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mimicchio2-config
+data:
+  env: DEV
+---
+#
+# PodPreset Mimicchio 1
+#
+apiVersion: settings.k8s.io/v1alpha1
+kind: PodPreset
+metadata:
+  name: m1-shared
+spec:
+  selector:
+    matchLabels:
+      app: mimicchio1
+  env:
+    - name: SECRET_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: mimicchio-secret
+          key: password
+#
+# Deployments Definitions Sample1
+#
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mimicchio1-deployment
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: mimicchio1
+  template:
+    metadata:
+      labels:
+        app: mimicchio1
+    spec:
+      containers:
+      - name: k8s-mimicchio1
+        image: mts88/sample1:1.0.9
+        ports:
+          - name: mimicchio1-port
+            containerPort: 3000
+---
+#
+# Deployments Definitions Sample2
+#
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mimicchio2-deployment
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: mimicchio2
+  template:
+    metadata:
+      labels:
+        app: mimicchio2
+    spec:
+      containers:
+      - name: k8s-mimicchio2
+        image: mts88/sample2:1.0.2
+        ports:
+          - name: mimicchio2-port
+            containerPort: 3001
+        env:
+          - name: ENVIRONMENT
+            valueFrom:
+                configMapKeyRef:
+                  name: mimicchio2-config
+                  key: env
+---
+#
+# Service definition Sample2 (exposing)
+#
+apiVersion: v1
+kind: Service
+metadata: 
+    name: mimicchio2-service
+spec:
+    ports:
+        - name: ms2-port
+          port: 31002
+          nodePort: 31002
+          targetPort: mimicchio2-port
+          protocol: TCP
+    selector:
+        app: mimicchio2
+    type: NodePort
+---
+#
+# Service definition (exposing)
+#
+apiVersion: v1
+kind: Service
+metadata: 
+  name: mimicchio1-service
+spec:
+  ports:
+    - name: ms1-port
+      port: 31001
+      nodePort: 31001
+      targetPort: mimicchio1-port
+      protocol: TCP
+  selector:
+    app: mimicchio1
+  type: NodePort
